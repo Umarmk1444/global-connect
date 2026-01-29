@@ -429,7 +429,13 @@ async function initWebRTC(isCaller) {
         console.log('Mic access granted.');
 
         callStatus.innerText = 'Connecting...';
-        peerConnection = new RTCPeerConnection(rtcConfig);
+        peerConnection = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        });
 
         localStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, localStream);
@@ -454,6 +460,7 @@ async function initWebRTC(isCaller) {
 
         peerConnection.ontrack = (event) => {
             console.log('Got remote audio');
+            // We must take the audio stream from the event and give it to the 'remote-audio' element
             remoteAudio.srcObject = event.streams[0];
             callStatus.innerText = 'Connected - Speaking';
             startTimer();
