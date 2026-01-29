@@ -104,7 +104,7 @@ const rtcConfig = {
                 'turns:openrelay.metered.ca:443?transport=tcp'
             ],
             username: 'openrelayproject',
-            password: 'openrelayproject'
+            credential: 'openrelayproject'
         }
     ],
     iceCandidatePoolSize: 10
