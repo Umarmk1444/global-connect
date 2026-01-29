@@ -1,4 +1,4 @@
-console.log("CONNECTED_JS_VERSION: 2.8 - Multi-Relay Fix");
+console.log("CONNECTED_JS_VERSION: 2.9 - Final Relay Push");
 if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
     alert("CRITICAL: You are using HTTP. WebRTC (Voice) requires HTTPS to work. Redirecting to Secure Site...");
     window.location.href = window.location.href.replace('http:', 'https:');
@@ -99,23 +99,28 @@ const rtcConfig = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:stun.services.mozilla.com' },
 
-        // Provider 1: ExpressTurn (Alternative Free Provider)
+        // Provider 1: FreeStun.net (Highly Stable)
         {
-            urls: 'turn:relay1.expressturn.com:3478',
-            username: 'efX4YQPLFJZQJNQF0W',
-            credential: 'iFBfJQz6vKCE9Wnz'
+            urls: 'turn:freestun.net:3478',
+            username: 'free',
+            credential: 'free'
         },
 
-        // Provider 2: OpenRelay (Backup)
+        // Provider 2: Numb Viagenie (Stable)
+        {
+            urls: 'turn:numb.viagenie.ca',
+            username: 'webrtc@live.com',
+            credential: 'muazkh'
+        },
+
+        // Provider 3: OpenRelay (Backup)
         {
             urls: [
-                'turn:openrelay.metered.ca:80',
-                'turn:openrelay.metered.ca:443',
-                'turns:openrelay.metered.ca:443?transport=tcp'
+                'turn:relay.metered.ca:80',
+                'turn:relay.metered.ca:443',
+                'turns:relay.metered.ca:443?transport=tcp'
             ],
             username: 'openrelayproject',
             credential: 'openrelayproject'
@@ -476,7 +481,13 @@ async function initWebRTC(isCaller) {
                 callStatus.innerText = 'Connected - Speaking';
             } else if (state === 'failed' || state === 'disconnected') {
                 callStatus.innerText = 'Connection Failed';
-                addMessage('Connection failed. This usually happens when one device is behind a strict firewall. Try switching from Wi-Fi to Mobile Data.', 'system');
+                addMessage('Connection failed. Retrying with backup server...', 'system');
+                // Auto-retry once if it fails early
+                if (peerConnection.iceConnectionState === 'failed') {
+                    console.log("Auto-retrying connection...");
+                    socket.emit('manual_disconnect');
+                    setTimeout(() => socket.emit('find_match'), 1000);
+                }
             } else {
                 callStatus.innerText = 'Status: ' + state;
             }
