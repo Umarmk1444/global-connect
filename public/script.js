@@ -91,9 +91,10 @@ const rtcConfig = {
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' }
-    ]
+        { urls: 'stun:stun.services.mozilla.com' }
+    ],
+    // This forces the connection to try harder to find a path through firewalls
+    iceCandidatePoolSize: 10
 };
 
 // Helpers
@@ -586,3 +587,4 @@ socket.on('partner_disconnected', () => {
 socket.on('disconnected_local', () => {
     // Confirmed disconnect from server
 });
+
