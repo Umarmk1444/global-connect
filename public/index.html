@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Global Connect | Talk to People</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Global Connect</h1>
+            <p>Talk to anyone. No login. Stay private.</p>
+        </header>
+        <div id="topic-banner" class="topic-banner hidden">
+            <span class="topic-label">Today's Topic:</span>
+            <span id="topic-text">Travel & Fun ✈️</span>
+        </div>
+
+        <main id="app">
+            <!-- Initial State (Landing Page) -->
+            <div id="start-screen" class="screen active scrollable">
+                <section class="hero-section">
+                    <div class="globe-logo">
+                        <i class="fas fa-globe-americas"></i>
+                    </div>
+                    <h2 class="hero-title">Talk to People from Anywhere. Now.</h2>
+                    <p class="hero-sub">Practice English with strangers.<br>No profiles. Just talk.</p>
+
+                    <div class="hero-actions">
+                        <button id="start-btn" class="primary-btn pulse">Start Talking Now <i
+                                class="fas fa-play"></i></button>
+                        <button id="how-it-works-btn" class="secondary-btn">How it works</button>
+                    </div>
+
+                    <div id="online-counter" class="online-badge">
+                        <span class="online-dot"></span>
+                        <span id="user-count">Connecting...</span>
+                    </div>
+
+                    <div class="key-points">
+                        <span><i class="fas fa-bolt"></i> Instant</span>
+                        <span><i class="fas fa-user-secret"></i> Anonymous</span>
+                        <span><i class="fas fa-globe"></i> Global</span>
+                    </div>
+                </section>
+
+                <section id="how-it-works" class="content-section hidden">
+                    <h3>How It Works</h3>
+                    <div class="steps-grid">
+                        <div class="step">
+                            <div class="step-icon"><i class="fas fa-mouse-pointer"></i></div>
+                            <p><strong>1. Join</strong><br>Click Start to enter the queue.</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-icon"><i class="fas fa-network-wired"></i></div>
+                            <p><strong>2. Match</strong><br>Get paired with a speaker.</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-icon"><i class="fas fa-comments"></i></div>
+                            <p><strong>3. Chat</strong><br>Start talking immediately.</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-icon"><i class="fas fa-forward"></i></div>
+                            <p><strong>4. Next</strong><br>Skip anytime you want.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="content-section emotional-hook">
+                    <h3>Why use this?</h3>
+                    <p>Learn faster when you are not shy.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check"></i> Talk without feeling shy</li>
+                        <li><i class="fas fa-check"></i> It's okay to make mistakes</li>
+                        <li><i class="fas fa-check"></i> Improve your English</li>
+                    </ul>
+                </section>
+
+                <section class="content-section safety-rules">
+                    <h3>Our Rules</h3>
+                    <p>Be nice • No bad words • No spam</p>
+                    <p class="tiny-text">Bad users will be blocked.</p>
+                </section>
+
+                <section class="content-section contact-us">
+                    <h3>Contact Us</h3>
+                    <p>Have questions or feedback? We'd love to hear from you.</p>
+                    <div class="contact-links">
+                        <a href="https://t.me/umer_2" class="contact-card">
+                            <i class="fab fa-telegram"></i>
+                            <span>Ibnu muktar</span>
+                        </a>
+                        <a href="tel:+251900380961" class="contact-card">
+                            <i class="fas fa-phone"></i>
+                            <span>+251 900 380 961</span>
+                        </a>
+                    </div>
+                </section>
+
+                <footer class="landing-footer">
+                    <p>The easiest way to talk to the world.</p>
+                    <div class="footer-links">
+                        <a href="https://t.me/umer_2">Telegram</a> •
+                        <a href="tel:+251900380961">Call</a>
+                    </div>
+                </footer>
+            </div>
+
+            <!-- Waiting Screen -->
+            <div id="waiting-screen" class="screen hidden">
+                <div class="spinner"></div>
+                <h2>Finding someone for you...</h2>
+                <p>Please wait.</p>
+                <button id="cancel-waiting-btn" class="secondary-btn" style="margin-top: 2rem;">Cancel</button>
+            </div>
+
+            <!-- Chat Screen -->
+            <div id="chat-screen" class="screen hidden">
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <span class="status-dot online"></span>
+                        <span>Global Connect</span>
+                    </div>
+                    <div class="chat-header-actions">
+                        <button id="report-btn" class="report-btn" title="Report this person">
+                            <i class="fas fa-flag"></i> Report
+                        </button>
+                        <button id="stop-btn" class="stop-btn" title="Stop live session">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                        <button id="next-btn" class="secondary-btn">Next
+                            <i class="fas fa-forward"></i></button>
+                    </div>
+                </div>
+
+                <!-- Audio Call UI -->
+                <!-- Audio Call UI (Floating Glass Bar) -->
+                <div id="call-ui" class="call-status-bar">
+                    <div class="avatar-ring">
+                        <img id="partner-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Stranger"
+                            alt="Stranger Avatar">
+                        <div class="ripple"></div>
+                    </div>
+                    <div class="call-details">
+                        <h3>Now Talking</h3>
+                        <div class="call-meta">
+                            <span id="call-status">Joining...</span>
+                            <span class="visualizer-mini">
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                            </span>
+                            <span id="call-timer" class="timer">00:00</span>
+                        </div>
+                    </div>
+                    <div class="call-controls">
+                        <button id="mute-btn" class="icon-btn" title="Mute Microphone">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="messages" class="messages-area">
+                    <!-- Messages will appear here -->
+                    <div class="system-msg">You are connected! Say hello.</div>
+                </div>
+
+                <div class="input-bar">
+                    <input type="text" id="message-input" class="glass-input" placeholder="Type a message..."
+                        autocomplete="off" maxlength="200">
+                    <span id="char-counter" class="char-counter">0/200</span>
+                    <button id="send-btn" class="icon-btn send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Remote Audio -->
+    <audio id="remote-audio" autoplay></audio>
+
+    <!-- Load Socket.IO client library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
