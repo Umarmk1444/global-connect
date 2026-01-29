@@ -430,13 +430,7 @@ async function initWebRTC(isCaller) {
         console.log('Mic access granted.');
 
         callStatus.innerText = 'Connecting...';
-        peerConnection = new RTCPeerConnection({
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
-            ]
-        });
+        peerConnection = new RTCPeerConnection(rtcConfig);
 
         localStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, localStream);
@@ -587,4 +581,5 @@ socket.on('partner_disconnected', () => {
 socket.on('disconnected_local', () => {
     // Confirmed disconnect from server
 });
+
 
