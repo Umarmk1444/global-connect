@@ -91,9 +91,11 @@ const rtcConfig = {
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
         { urls: 'stun:stun.services.mozilla.com' }
     ],
-    // This forces the connection to try harder to find a path through firewalls
+    // Helps find paths through firewalls faster
     iceCandidatePoolSize: 10
 };
 
@@ -447,7 +449,7 @@ async function initWebRTC(isCaller) {
                 callStatus.innerText = 'Connected - Speaking';
             } else if (state === 'failed' || state === 'disconnected') {
                 callStatus.innerText = 'Connection Failed';
-                addMessage('Call failed. Try disabling Wi-Fi isolation or Firewalls.', 'system');
+                addMessage('Connection failed. This usually happens when one device is behind a strict firewall. Try switching from Wi-Fi to Mobile Data.', 'system');
             } else {
                 callStatus.innerText = 'Status: ' + state;
             }
@@ -581,5 +583,3 @@ socket.on('partner_disconnected', () => {
 socket.on('disconnected_local', () => {
     // Confirmed disconnect from server
 });
-
-
