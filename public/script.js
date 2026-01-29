@@ -1,4 +1,11 @@
-console.log("CONNECTED_JS_VERSION: 2.3");
+console.log("CONNECTED_JS_VERSION: 2.5");
+if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
+    alert("CRITICAL: You are using HTTP. WebRTC (Voice) requires HTTPS to work. Redirecting to Secure Site...");
+    window.location.href = window.location.href.replace('http:', 'https:');
+}
+if (!window.isSecureContext) {
+    alert("SECURITY BLOCK: Your browser is blocking microphone access because this connection is not secure (HTTPS). Please use the secure link.");
+}
 const socket = io();
 
 // UI Elements
