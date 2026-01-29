@@ -88,14 +88,25 @@ let animationId = null;
 
 const rtcConfig = {
     iceServers: [
+        // STUN servers (Help find public IP)
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun3.l.google.com:19302' },
         { urls: 'stun:stun4.l.google.com:19302' },
-        { urls: 'stun:stun.services.mozilla.com' }
+        { urls: 'stun:stun.services.mozilla.com' },
+
+        // TURN servers (Relay server for strict firewalls)
+        {
+            urls: [
+                'turn:openrelay.metered.ca:80',
+                'turn:openrelay.metered.ca:443',
+                'turns:openrelay.metered.ca:443?transport=tcp'
+            ],
+            username: 'openrelayproject',
+            password: 'openrelayproject'
+        }
     ],
-    // Helps find paths through firewalls faster
     iceCandidatePoolSize: 10
 };
 
