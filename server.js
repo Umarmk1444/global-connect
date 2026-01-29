@@ -5,7 +5,14 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+// Initialize Socket.IO with CORS
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Allow all origins for now, or specify: ["https://your-domain.com"]
+        methods: ["GET", "POST"]
+    }
+});
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -27,9 +34,11 @@ io.on('connection', (socket) => {
 
     // User wants to find a match
     socket.on('find_match', () => {
-        // If the user is already matched or waiting, ignore (prevent double queueing)
-        // Simple check: create a room property on the socket
-        if (socket.peerId) return;
+        // Prevent double queueing or matching if already in a room
+        if (socket.roomId || socket.peerId) return;
+
+        // Remove from waiting queue if already there (extra safety)
+        waitingUsers = waitingUsers.filter(user => user.id !== socket.id);
 
         if (waitingUsers.length > 0) {
             // Someone is waiting, pair them up!
@@ -129,23 +138,30 @@ io.on('connection', (socket) => {
 
     // Allow manual disconnect from UI
     socket.on('manual_disconnect', () => {
+        console.log(`Manual disconnect requested by ${socket.id}`);
+
+        // 1. Remove from waiting queue
+        waitingUsers = waitingUsers.filter(user => user.id !== socket.id);
+
+        // 2. Clear current room/peer associations
         if (socket.peerId) {
             const partnerSocket = io.sockets.sockets.get(socket.peerId);
             if (partnerSocket) {
                 partnerSocket.emit('partner_disconnected');
-                partnerSocket.leave(socket.roomId);
+                if (socket.roomId) {
+                    partnerSocket.leave(socket.roomId);
+                }
                 partnerSocket.peerId = null;
                 partnerSocket.roomId = null;
             }
-            socket.leave(socket.roomId);
-            socket.peerId = null;
-            socket.roomId = null;
-            socket.emit('disconnected_local');
-        } else {
-            // If waiting, remove from queue
-            waitingUsers = waitingUsers.filter(user => user.id !== socket.id);
-            socket.emit('disconnected_local');
         }
+
+        if (socket.roomId) {
+            socket.leave(socket.roomId);
+        }
+        socket.peerId = null;
+        socket.roomId = null;
+        socket.emit('disconnected_local');
     });
 });
 
