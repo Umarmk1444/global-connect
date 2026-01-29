@@ -1,4 +1,4 @@
-console.log("CONNECTED_JS_VERSION: 2.0");
+console.log("CONNECTED_JS_VERSION: 2.2");
 const socket = io();
 
 // UI Elements
@@ -96,6 +96,9 @@ const rtcConfig = {
         { urls: 'stun:stun3.l.google.com:19302' },
         { urls: 'stun:stun4.l.google.com:19302' },
         { urls: 'stun:stun.services.mozilla.com' },
+        { urls: 'stun:stun.l.google.com:19305' },
+        { urls: 'stun:stun1.l.google.com:19305' },
+        { urls: 'stun:stun2.l.google.com:19305' },
 
         // TURN servers (Relay server for strict firewalls) - Split for compatibility
         {
@@ -460,7 +463,7 @@ async function initWebRTC(isCaller) {
         // Monitor connection state - Detailed UI updates
         peerConnection.oniceconnectionstatechange = () => {
             const state = peerConnection.iceConnectionState;
-            console.log('ICE Connection State:', state);
+            console.log('ICE Connection State Change:', state);
 
             if (state === 'checking') {
                 callStatus.innerText = 'Finding person...';
@@ -474,17 +477,35 @@ async function initWebRTC(isCaller) {
             }
         };
 
+        peerConnection.onicegatheringstatechange = () => {
+            console.log("ICE Gathering State:", peerConnection.iceGatheringState);
+        };
+
         peerConnection.ontrack = (event) => {
-            console.log('Got remote audio');
+            console.log('Got remote audio track');
             // We must take the audio stream from the event and give it to the 'remote-audio' element
             remoteAudio.srcObject = event.streams[0];
+
+            // Explicitly call play to handle browser autoplay policies
+            remoteAudio.play().then(() => {
+                console.log("Remote audio playing successfully");
+            }).catch(e => {
+                console.warn("Autoplay blocked or failed:", e);
+                addMessage("Click anywhere to enable voice.", "system");
+            });
+
             callStatus.innerText = 'Connected - Speaking';
             startTimer();
             initVisualizer(event.streams[0]);
         };
 
+        peerConnection.onicecandidateerror = (event) => {
+            console.warn("ICE Candidate Error:", event.errorCode, event.errorText);
+        };
+
         peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log("ICE [Local Candidate]:", event.candidate.candidate);
                 socket.emit('signal', { candidate: event.candidate });
             }
         };
@@ -543,7 +564,7 @@ async function handleSignal(data) {
         console.log('Setting remote description (answer)...');
         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
     } else if (data.candidate) {
-        console.log('Adding ICE candidate...');
+        console.log("ICE [Remote Candidate Received]:", data.candidate.candidate);
         if (peerConnection && peerConnection.remoteDescription) {
             try {
                 await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
