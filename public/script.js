@@ -1,4 +1,4 @@
-console.log("CONNECTED_JS_VERSION: 2.2");
+console.log("CONNECTED_JS_VERSION: 2.3");
 const socket = io();
 
 // UI Elements
@@ -89,35 +89,26 @@ let animationId = null;
 
 const rtcConfig = {
     iceServers: [
-        // STUN servers (Help find public IP)
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun3.l.google.com:19302' },
         { urls: 'stun:stun4.l.google.com:19302' },
-        { urls: 'stun:stun.services.mozilla.com' },
-        { urls: 'stun:stun.l.google.com:19305' },
-        { urls: 'stun:stun1.l.google.com:19305' },
-        { urls: 'stun:stun2.l.google.com:19305' },
-
-        // TURN servers (Relay server for strict firewalls) - Split for compatibility
         {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-        },
-        {
-            urls: 'turn:openrelay.metered.ca:443',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-        },
-        {
-            urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+            urls: [
+                'turn:openrelay.metered.ca:80',
+                'turn:openrelay.metered.ca:443',
+                'turn:openrelay.metered.ca:1234',
+                'turns:openrelay.metered.ca:443?transport=tcp', // This is the most important line
+                'turns:openrelay.metered.ca:5349?transport=tcp'
+            ],
             username: 'openrelayproject',
             credential: 'openrelayproject'
         }
     ],
-    iceCandidatePoolSize: 10
+    iceCandidatePoolSize: 10,
+    // Add this line to force the browser to prioritize the relay if direct fails
+    iceTransportPolicy: 'all'
 };
 
 // Helpers
