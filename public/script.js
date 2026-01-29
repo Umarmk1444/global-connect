@@ -1,4 +1,4 @@
-console.log("CONNECTED_JS_VERSION: 2.5");
+console.log("CONNECTED_JS_VERSION: 2.6 - Multi-Provider TURN");
 if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
     alert("CRITICAL: You are using HTTP. WebRTC (Voice) requires HTTPS to work. Redirecting to Secure Site...");
     window.location.href = window.location.href.replace('http:', 'https:');
@@ -96,25 +96,51 @@ let animationId = null;
 
 const rtcConfig = {
     iceServers: [
+        // STUN Servers (Multiple providers for redundancy)
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' },
+
+        // TURN Provider #1: OpenRelay (Free)
         {
             urls: [
                 'turn:openrelay.metered.ca:80',
                 'turn:openrelay.metered.ca:443',
-                'turn:openrelay.metered.ca:1234',
-                'turns:openrelay.metered.ca:443?transport=tcp', // This is the most important line
-                'turns:openrelay.metered.ca:5349?transport=tcp'
+                'turns:openrelay.metered.ca:443?transport=tcp'
             ],
             username: 'openrelayproject',
             credential: 'openrelayproject'
+        },
+
+        // TURN Provider #2: Numb Viagenie (Free Backup)
+        {
+            urls: [
+                'turn:numb.viagenie.ca',
+                'turns:numb.viagenie.ca'
+            ],
+            username: 'webrtc@live.com',
+            credential: 'muazkh'
+        },
+
+        // TURN Provider #3: Metered (Different credentials)
+        {
+            urls: 'turn:a.relay.metered.ca:80',
+            username: 'ae201f36bd0d3966f33c468a',
+            credential: 'nnxDLr+17PX3PgYh'
+        },
+        {
+            urls: 'turn:a.relay.metered.ca:443',
+            username: 'ae201f36bd0d3966f33c468a',
+            credential: 'nnxDLr+17PX3PgYh'
+        },
+        {
+            urls: 'turns:a.relay.metered.ca:443?transport=tcp',
+            username: 'ae201f36bd0d3966f33c468a',
+            credential: 'nnxDLr+17PX3PgYh'
         }
     ],
     iceCandidatePoolSize: 10,
-    // Add this line to force the browser to prioritize the relay if direct fails
     iceTransportPolicy: 'all'
 };
 
@@ -503,8 +529,21 @@ async function initWebRTC(isCaller) {
 
         peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                console.log("ICE [Local Candidate]:", event.candidate.candidate);
+                const candidateStr = event.candidate.candidate;
+                console.log("ICE [Local Candidate]:", candidateStr);
+
+                // Check if this is a RELAY candidate (CRITICAL for different networks)
+                if (candidateStr.includes('typ relay')) {
+                    console.log("%c✅ RELAY CANDIDATE FOUND! This can bridge different networks.", "color: green; font-weight: bold");
+                } else if (candidateStr.includes('typ srflx')) {
+                    console.log("%c⚠️  SRFLX (STUN) candidate - may work for some networks", "color: orange");
+                } else if (candidateStr.includes('typ host')) {
+                    console.log("%c❌ HOST candidate only - won't work across different networks", "color: gray");
+                }
+
                 socket.emit('signal', { candidate: event.candidate });
+            } else {
+                console.log("%c🏁 ICE Gathering Complete", "color: blue; font-weight: bold");
             }
         };
 
