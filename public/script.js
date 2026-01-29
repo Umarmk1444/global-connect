@@ -1,4 +1,4 @@
-console.log("CONNECTED_JS_VERSION: 2.6 - Multi-Provider TURN");
+console.log("CONNECTED_JS_VERSION: 2.7 - Dynamic TURN");
 if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
     alert("CRITICAL: You are using HTTP. WebRTC (Voice) requires HTTPS to work. Redirecting to Secure Site...");
     window.location.href = window.location.href.replace('http:', 'https:');
@@ -94,52 +94,53 @@ let audioContext = null;
 let audioAnalyser = null;
 let animationId = null;
 
-const rtcConfig = {
-    iceServers: [
-        // STUN Servers (Multiple providers for redundancy)
+// Dynamic TURN server configuration
+// This function fetches fresh TURN credentials from Metered.ca API
+async function getIceServers() {
+    const defaultServers = [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478' },
+        { urls: 'stun:global.stun.twilio.com:3478' }
+    ];
 
-        // TURN Provider #1: OpenRelay (Free)
-        {
-            urls: [
-                'turn:openrelay.metered.ca:80',
-                'turn:openrelay.metered.ca:443',
-                'turns:openrelay.metered.ca:443?transport=tcp'
-            ],
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-        },
+    try {
+        // Metered.ca free API for TURN credentials
+        const response = await fetch('https://globalconnect.metered.live/api/v1/turn/credentials?apiKey=d5c3e8f7b4a12c9d6e0f1a2b3c4d5e6f');
+        if (!response.ok) throw new Error('Metered API failed');
+        const iceServers = await response.json();
+        console.log('%c✅ Dynamic TURN credentials loaded from Metered.ca', 'color: green; font-weight: bold');
+        return [...defaultServers, ...iceServers];
+    } catch (e1) {
+        console.warn('Metered.ca API failed, trying alternate providers...');
 
-        // TURN Provider #2: Numb Viagenie (Free Backup)
-        {
-            urls: [
-                'turn:numb.viagenie.ca',
-                'turns:numb.viagenie.ca'
-            ],
-            username: 'webrtc@live.com',
-            credential: 'muazkh'
-        },
+        // Fallback to static servers
+        return [
+            ...defaultServers,
+            // ExpressTurn free servers
+            {
+                urls: 'turn:relay1.expressturn.com:3478',
+                username: 'efX4YQPLFJZQJNQF0W',
+                credential: 'iFBfJQz6vKCE9Wnz'
+            },
+            // Twilio's free STUN (no TURN without account)
+            { urls: 'stun:global.stun.twilio.com:3478' },
+            // OpenRelay as last resort
+            {
+                urls: [
+                    'turn:openrelay.metered.ca:80',
+                    'turn:openrelay.metered.ca:443',
+                    'turns:openrelay.metered.ca:443?transport=tcp'
+                ],
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            }
+        ];
+    }
+}
 
-        // TURN Provider #3: Metered (Different credentials)
-        {
-            urls: 'turn:a.relay.metered.ca:80',
-            username: 'ae201f36bd0d3966f33c468a',
-            credential: 'nnxDLr+17PX3PgYh'
-        },
-        {
-            urls: 'turn:a.relay.metered.ca:443',
-            username: 'ae201f36bd0d3966f33c468a',
-            credential: 'nnxDLr+17PX3PgYh'
-        },
-        {
-            urls: 'turns:a.relay.metered.ca:443?transport=tcp',
-            username: 'ae201f36bd0d3966f33c468a',
-            credential: 'nnxDLr+17PX3PgYh'
-        }
-    ],
+let rtcConfig = {
+    iceServers: [],
     iceCandidatePoolSize: 10,
     iceTransportPolicy: 'all'
 };
@@ -476,8 +477,12 @@ async function initWebRTC(isCaller) {
         }
         console.log('Mic access granted.');
 
+        // Fetch fresh TURN credentials before creating connection
+        console.log('Fetching TURN credentials...');
+        rtcConfig.iceServers = await getIceServers();
+
         callStatus.innerText = 'Connecting...';
-        console.log("Initializing RTCPeerConnection with config:", JSON.stringify(rtcConfig, null, 2));
+        console.log("Initializing RTCPeerConnection with", rtcConfig.iceServers.length, "ICE servers");
         peerConnection = new RTCPeerConnection(rtcConfig);
 
         localStream.getTracks().forEach(track => {
