@@ -10,6 +10,52 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        .visualizer-pair {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 12px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .viz-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .viz-label {
+            font-size: 7px;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+        }
+
+        .visualizer-mini {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 16px;
+            width: 18px;
+        }
+
+        .visualizer-mini .bar {
+            width: 3px;
+            height: 20%;
+            background: #4cc9f0;
+            border-radius: 2px;
+            transition: height 0.05s ease;
+        }
+
+        .visualizer-mini .bar.local-bar {
+            background: #f72585;
+            /* Vibrant pink for local mic */
+        }
+    </style>
 </head>
 
 <body>
@@ -153,12 +199,22 @@
                         <h3>Now Talking</h3>
                         <div class="call-meta">
                             <span id="call-status">Joining...</span>
-                            <span class="visualizer-mini">
-                                <div class="bar"></div>
-                                <div class="bar"></div>
-                                <div class="bar"></div>
-                                <div class="bar"></div>
-                            </span>
+                            <div class="visualizer-pair">
+                                <div class="viz-group">
+                                    <span class="viz-label">YOU</span>
+                                    <div class="visualizer-mini">
+                                        <div class="bar local-bar"></div>
+                                        <div class="bar local-bar"></div>
+                                    </div>
+                                </div>
+                                <div class="viz-group">
+                                    <span class="viz-label">THEM</span>
+                                    <div class="visualizer-mini">
+                                        <div class="bar"></div>
+                                        <div class="bar"></div>
+                                    </div>
+                                </div>
+                            </div>
                             <span id="call-timer" class="timer">00:00</span>
                         </div>
                     </div>
@@ -191,10 +247,7 @@
 
     <!-- Load Socket.IO client library -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js?v=2.9"></script>
+    <script src="script.js?v=3.0"></script>
 </body>
 
 </html>
-
-
-
