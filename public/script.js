@@ -1,4 +1,4 @@
-console.log("CONNECTED_JS_VERSION: 2.9 - Final Relay Push");
+console.log("CONNECTED_JS_VERSION: 3.0 - Local Mic Test");
 if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
     alert("CRITICAL: You are using HTTP. WebRTC (Voice) requires HTTPS to work. Redirecting to Secure Site...");
     window.location.href = window.location.href.replace('http:', 'https:');
@@ -127,7 +127,7 @@ const rtcConfig = {
         }
     ],
     iceCandidatePoolSize: 10,
-    iceTransportPolicy: 'all'
+    iceTransportPolicy: 'relay' // Force Relay for testing
 };
 
 // Helpers
@@ -236,7 +236,7 @@ muteBtn.addEventListener('click', toggleMute);
 function endSession() {
     console.log('Ending session and cleaning up resources...');
     stopTimer();
-    stopVisualizer();
+    stopVisualizers(); // Renamed from stopVisualizer
     if (peerConnection) {
         peerConnection.onicecandidate = null;
         peerConnection.ontrack = null;
@@ -297,66 +297,66 @@ function stopTimer() {
     clearInterval(timerInterval);
 }
 
-function initVisualizer(stream) {
+function initVisualizers(localStream, remoteStream) {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
+    if (audioContext.state === 'suspended') audioContext.resume();
 
-    // Resume context if suspended (browser policy)
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
+    // Local Visualizer (Your Mic)
+    const localSource = audioContext.createMediaStreamSource(localStream);
+    const localAnalyser = audioContext.createAnalyser();
+    localAnalyser.fftSize = 32;
+    localSource.connect(localAnalyser);
+
+    // Remote Visualizer (Partner Mic)
+    let remoteAnalyser = null;
+    if (remoteStream) {
+        const remoteSource = audioContext.createMediaStreamSource(remoteStream);
+        remoteAnalyser = audioContext.createAnalyser();
+        remoteAnalyser.fftSize = 32;
+        remoteSource.connect(remoteAnalyser);
     }
 
-    const source = audioContext.createMediaStreamSource(stream);
-    audioAnalyser = audioContext.createAnalyser();
-    audioAnalyser.fftSize = 32;
-    source.connect(audioAnalyser);
-
-    drawVisualizer();
+    drawVisualizers(localAnalyser, remoteAnalyser);
 }
 
-function drawVisualizer() {
-    if (!audioAnalyser) return;
-
-    const dataArray = new Uint8Array(audioAnalyser.frequencyBinCount);
-    const bars = document.querySelectorAll('.bar');
+function drawVisualizers(localAn, remoteAn) {
+    const dataArray = new Uint8Array(16);
+    const localBars = document.querySelectorAll('.local-bar'); // We need these in HTML
+    const remoteBars = document.querySelectorAll('.bar');
 
     function animate() {
-        if (!audioAnalyser) return;
+        if (!localAn && !remoteAn) return;
         animationId = requestAnimationFrame(animate);
-        audioAnalyser.getByteFrequencyData(dataArray);
 
-        // Map audio data to bars
-        if (bars.length >= 4) {
-            // More sensitive mapping
-            const sensitivity = 1.2;
-            const v1 = (dataArray[1] / 255) * sensitivity;
-            const v2 = (dataArray[3] / 255) * sensitivity;
-            const v3 = (dataArray[5] / 255) * sensitivity;
-            const v4 = (dataArray[7] / 255) * sensitivity;
+        // Update Local Bars
+        if (localAn && localBars.length) {
+            localAn.getByteFrequencyData(dataArray);
+            localBars.forEach((bar, i) => {
+                const val = (dataArray[i % 8] / 255) * 100;
+                bar.style.height = `${Math.max(15, val)}%`;
+            });
+        }
 
-            bars[0].style.height = `${15 + (Math.min(v1, 1) * 85)}%`;
-            bars[1].style.height = `${15 + (Math.min(v2, 1) * 85)}%`;
-            bars[2].style.height = `${15 + (Math.min(v3, 1) * 85)}%`;
-            bars[3].style.height = `${15 + (Math.min(v4, 1) * 85)}%`;
-
-            // Add subtle glow based on volume
-            const avg = (v1 + v2 + v3 + v4) / 4;
-            bars.forEach(bar => {
-                bar.style.opacity = 0.5 + (avg * 0.5);
+        // Update Remote Bars
+        if (remoteAn && remoteBars.length) {
+            remoteAn.getByteFrequencyData(dataArray);
+            remoteBars.forEach((bar, i) => {
+                const val = (dataArray[i % 8] / 255) * 100;
+                bar.style.height = `${Math.max(15, val)}%`;
             });
         }
     }
     animate();
 }
 
-function stopVisualizer() {
+function stopVisualizers() {
     if (animationId) cancelAnimationFrame(animationId);
     if (audioContext && audioContext.state !== 'closed') {
         audioContext.close().then(() => { audioContext = null; });
     }
-    audioAnalyser = null;
-    document.querySelectorAll('.bar').forEach(bar => {
+    document.querySelectorAll('.bar, .local-bar').forEach(bar => {
         bar.style.height = '20%';
         bar.style.opacity = '0.5';
     });
@@ -461,6 +461,7 @@ async function initWebRTC(isCaller) {
             localStream = await new Promise((res, rej) => getUserMedia.call(navigator, { audio: true }, res, rej));
         }
         console.log('Mic access granted.');
+        initVisualizers(localStream, null); // Start local visualizer immediately
 
         callStatus.innerText = 'Connecting...';
         console.log("Initializing RTCPeerConnection with config:", JSON.stringify(rtcConfig, null, 2));
@@ -512,7 +513,7 @@ async function initWebRTC(isCaller) {
 
             callStatus.innerText = 'Connected - Speaking';
             startTimer();
-            initVisualizer(event.streams[0]);
+            initVisualizers(localStream, event.streams[0]); // Update with remote stream
         };
 
         peerConnection.onicecandidateerror = (event) => {
