@@ -1,3 +1,4 @@
+console.log("CONNECTED_JS_VERSION: 2.0");
 const socket = io();
 
 // UI Elements
@@ -449,6 +450,7 @@ async function initWebRTC(isCaller) {
         console.log('Mic access granted.');
 
         callStatus.innerText = 'Connecting...';
+        console.log("Initializing RTCPeerConnection with config:", JSON.stringify(rtcConfig, null, 2));
         peerConnection = new RTCPeerConnection(rtcConfig);
 
         localStream.getTracks().forEach(track => {
