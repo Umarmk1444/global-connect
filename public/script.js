@@ -482,7 +482,16 @@ async function initWebRTC(isCaller) {
         playSystemSound('connect');
     } catch (err) {
         console.error('WebRTC Error:', err);
-        callStatus.innerText = 'Status: ' + err.message;
+        let errorMsg = err.message;
+        if (err.name === 'NotAllowedError') {
+            errorMsg = 'Microphone access denied. Please allow it in browser settings.';
+        } else if (err.name === 'NotFoundError') {
+            errorMsg = 'No microphone found on your device.';
+        } else if (err.name === 'NotReadableError') {
+            errorMsg = 'Microphone is already in use by another app.';
+        }
+        callStatus.innerText = 'Error: ' + errorMsg;
+        addMessage(`Call setup failed: ${errorMsg}`, 'system');
     } finally {
         isInitializing = false;
     }
