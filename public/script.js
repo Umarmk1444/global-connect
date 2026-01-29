@@ -127,7 +127,7 @@ const rtcConfig = {
         }
     ],
     iceCandidatePoolSize: 10,
-    iceTransportPolicy: 'relay' // Force Relay for testing
+    iceTransportPolicy: 'all' // Force Relay for testing
 };
 
 // Helpers
@@ -653,3 +653,4 @@ socket.on('partner_disconnected', () => {
 socket.on('disconnected_local', () => {
     // Confirmed disconnect from server
 });
+
