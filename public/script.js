@@ -94,17 +94,38 @@ let audioContext = null;
 let audioAnalyser = null;
 let animationId = null;
 
-// WebRTC ICE Configuration - Updated with reliable TURN servers
-const rtcConfig = {
-    iceServers: [
+// Function to fetch TURN server credentials dynamically from Metered API
+async function getTurnCredentials() {
+    try {
+        // Calling the REST API to fetch the TURN Server Credentials
+        const response = await fetch("https://globalconnect.metered.live/api/v1/turn/credentials?apiKey=09587faf8d3d9a4627979ab8196eb8f0ee4c");
+
+        if (!response.ok) {
+            console.warn('Failed to fetch TURN credentials, using fallback servers');
+            return getFallbackIceServers();
+        }
+
+        // Saving the response in the iceServers array
+        const iceServers = await response.json();
+        console.log('%c✅ Dynamic TURN credentials loaded successfully', 'color: green; font-weight: bold');
+        return iceServers;
+    } catch (error) {
+        console.error('Error fetching TURN credentials:', error);
+        console.warn('Using fallback TURN servers');
+        return getFallbackIceServers();
+    }
+}
+
+// Fallback ICE servers in case the Metered API is unavailable
+function getFallbackIceServers() {
+    return [
         // STUN servers for NAT traversal (multiple for redundancy)
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun.services.mozilla.com' },
 
-        // Primary TURN: Metered Open Relay (Free 20GB/month, 99.999% uptime)
-        // Runs on ports 80/443 to bypass firewalls
+        // Fallback TURN: Metered Open Relay
         {
             urls: [
                 'turn:global.relay.metered.ca:80',
@@ -122,10 +143,8 @@ const rtcConfig = {
             username: 'free',
             credential: 'free'
         }
-    ],
-    iceCandidatePoolSize: 10,
-    iceTransportPolicy: 'all' // Allow all connection types (host, srflx, relay)
-};
+    ];
+}
 
 // Helpers
 function showScreen(screenId) {
@@ -461,6 +480,17 @@ async function initWebRTC(isCaller) {
         initVisualizers(localStream, null); // Start local visualizer immediately
 
         callStatus.innerText = 'Connecting...';
+
+        // Fetch fresh TURN credentials for this connection
+        console.log('Fetching TURN server credentials...');
+        const iceServers = await getTurnCredentials();
+
+        const rtcConfig = {
+            iceServers: iceServers,
+            iceCandidatePoolSize: 10,
+            iceTransportPolicy: 'all' // Allow all connection types (host, srflx, relay)
+        };
+
         console.log("Initializing RTCPeerConnection with config:", JSON.stringify(rtcConfig, null, 2));
         peerConnection = new RTCPeerConnection(rtcConfig);
 
