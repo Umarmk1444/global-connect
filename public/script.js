@@ -1,4 +1,4 @@
-console.log("CONNECTED_JS_VERSION: 3.0 - Local Mic Test");
+console.log("CONNECTED_JS_VERSION: 3.1 - Reliable TURN Servers");
 if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
     alert("CRITICAL: You are using HTTP. WebRTC (Voice) requires HTTPS to work. Redirecting to Secure Site...");
     window.location.href = window.location.href.replace('http:', 'https:');
@@ -94,40 +94,37 @@ let audioContext = null;
 let audioAnalyser = null;
 let animationId = null;
 
-// Final attempt at free TURN server fallback
+// WebRTC ICE Configuration - Updated with reliable TURN servers
 const rtcConfig = {
     iceServers: [
+        // STUN servers for NAT traversal (multiple for redundancy)
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun.services.mozilla.com' },
 
-        // Provider 1: FreeStun.net (Highly Stable)
+        // Primary TURN: Metered Open Relay (Free 20GB/month, 99.999% uptime)
+        // Runs on ports 80/443 to bypass firewalls
+        {
+            urls: [
+                'turn:global.relay.metered.ca:80',
+                'turn:global.relay.metered.ca:80?transport=tcp',
+                'turn:global.relay.metered.ca:443',
+                'turns:global.relay.metered.ca:443?transport=tcp'
+            ],
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+        },
+
+        // Backup TURN: FreeStun.net
         {
             urls: 'turn:freestun.net:3478',
             username: 'free',
             credential: 'free'
-        },
-
-        // Provider 2: Numb Viagenie (Stable)
-        {
-            urls: 'turn:numb.viagenie.ca',
-            username: 'webrtc@live.com',
-            credential: 'muazkh'
-        },
-
-        // Provider 3: OpenRelay (Backup)
-        {
-            urls: [
-                'turn:relay.metered.ca:80',
-                'turn:relay.metered.ca:443',
-                'turns:relay.metered.ca:443?transport=tcp'
-            ],
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
         }
     ],
     iceCandidatePoolSize: 10,
-    iceTransportPolicy: 'all' // Force Relay for testing
+    iceTransportPolicy: 'all' // Allow all connection types (host, srflx, relay)
 };
 
 // Helpers
@@ -523,20 +520,25 @@ async function initWebRTC(isCaller) {
         peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
                 const candidateStr = event.candidate.candidate;
-                console.log("ICE [Local Candidate]:", candidateStr);
+                const candidateType = event.candidate.type;
+                console.log(`%c[ICE] Local Candidate Generated`, "color: cyan; font-weight: bold");
+                console.log(`  Type: ${candidateType}`);
+                console.log(`  Full: ${candidateStr}`);
 
                 // Check if this is a RELAY candidate (CRITICAL for different networks)
                 if (candidateStr.includes('typ relay')) {
-                    console.log("%c✅ RELAY CANDIDATE FOUND! This can bridge different networks.", "color: green; font-weight: bold");
+                    console.log("%c✅ RELAY CANDIDATE FOUND! This can bridge different networks.", "color: green; font-weight: bold; font-size: 14px");
+                    addMessage('🌐 Cross-network connection ready!', 'system');
                 } else if (candidateStr.includes('typ srflx')) {
-                    console.log("%c⚠️  SRFLX (STUN) candidate - may work for some networks", "color: orange");
+                    console.log("%c⚠️  SRFLX (Server Reflexive) candidate - may work for some networks", "color: orange");
                 } else if (candidateStr.includes('typ host')) {
-                    console.log("%c❌ HOST candidate only - won't work across different networks", "color: gray");
+                    console.log("%c📡 HOST candidate - works for same network only", "color: gray");
                 }
 
                 socket.emit('signal', { candidate: event.candidate });
             } else {
                 console.log("%c🏁 ICE Gathering Complete", "color: blue; font-weight: bold");
+                console.log("%c[Summary] Check above for relay candidates. If none found, cross-network connections may fail.", "color: yellow");
             }
         };
 
@@ -653,4 +655,3 @@ socket.on('partner_disconnected', () => {
 socket.on('disconnected_local', () => {
     // Confirmed disconnect from server
 });
-
